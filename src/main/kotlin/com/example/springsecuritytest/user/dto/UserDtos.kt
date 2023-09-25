@@ -1,8 +1,8 @@
-package com.example.springsecuritytest.member.dto
+package com.example.springsecuritytest.user.dto
 
 import com.example.springsecuritytest.common.annotation.ValidEnum
-import com.example.springsecuritytest.common.status.Gender
-import com.example.springsecuritytest.member.entity.Member
+import com.example.springsecuritytest.common.status.UserType
+import com.example.springsecuritytest.user.entity.User
 import com.fasterxml.jackson.annotation.JsonProperty
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
@@ -21,14 +21,15 @@ import java.time.format.DateTimeFormatter
 //)
 
 // validation check를 위해 모두 string (null 허용 변수로 변경)
-data class MemberDtoRequest (
-        val id: Long?,
+data class UserDtoRequest (
+        var id: Long?,
         // dto 로 받는 값들에 validation 추가
         // 빈값 입력 불가
         @field:NotBlank
-        // loginId 와 _loginId 연결
-        @JsonProperty("loginId")
-        private val _loginId: String?,
+        @field:Email
+        // email 와 _email 연결
+        @JsonProperty("email")
+        private val _email: String?,
 
         @field:NotBlank
         // 입력 패턴 정규식
@@ -44,40 +45,28 @@ data class MemberDtoRequest (
         private val _name: String?,
 
         @field:NotBlank
-        @field:Pattern(
-                regexp = "^([12]\\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01]))$",
-                message = "날짜형식(YYYY-MM-DD)을 확인해주세요"
-        )
-        @JsonProperty("birthDate")
-        private val _birthDate: String?,
-
-        @field:NotBlank
         // ValidEnum으로 생성한 annotation 호출
-        @field:ValidEnum(enumClass = Gender::class,
-                message = "MAN 이나 WOMAN 중 하나를 선택해주세요")
-        @JsonProperty("gender")
-        private val _gender: String?,
+        @field:ValidEnum(enumClass = UserType::class,
+                message = "ADMIN 이나 MEMBER 중 하나를 선택해주세요")
+        @JsonProperty("userType")
+        private val _userType: String?,
 
-        @field:NotBlank
-        @field:Email
-        @JsonProperty("email")
-        private val _email: String?
+        @JsonProperty("point")
+        private val _point: Long?,
 ) {
-    val loginId: String
+    val email: String
         // _loginId 는 null 값도 허용 되는 타입이지만 loginId는 null을 허용하지 않는 변수로 선언했기 때문에 !! 를 붙여줘야함
         // !! : null 값이 들어갈 수있는 변수 이지만 null 값이 아님을 보장
-        get() = _loginId!!
+        get() = _email!!
     val password: String
         get() = _password!!
     val name: String
         get() = _name!!
-    val birthDate: LocalDate
-        get() = _birthDate!!.toLocalDate()
-    // gender enum class
-    val gender: Gender
-        get() = Gender.valueOf(_gender!!)
-    val email: String
-        get() = _email!!
+    // UserType enum class
+    val userType: UserType
+        get() = UserType.valueOf(_userType!!)
+    val point: Long
+        get() = _point!!
 
     // string 에 .toLocalDate()를 입력하면 LocalDate로 반환하는 확장 함수 생성
     private fun String.toLocalDate(): LocalDate =
@@ -85,6 +74,31 @@ data class MemberDtoRequest (
             LocalDate.parse(this, DateTimeFormatter.ofPattern("yyy-MM-dd"))
 
     // entity로 변환해서 반환하는 함수 생성
-    fun toEntity(): Member =
-            Member(id, loginId, password, name, birthDate, gender, email)
+    fun toEntity(): User =
+            User(id, email, password, name, userType, point)
 }
+
+
+// 로그인 DTO
+data class LoginDto(
+        @field:NotBlank
+        @JsonProperty("email")
+        private val _email: String?,
+
+        @field:NotBlank
+        @JsonProperty("password")
+        private val _password: String?,
+) {
+    val email: String
+        get() = _email!!
+    val password: String
+        get() = _password!!
+}
+
+data class UserDtoResponse (
+        val id: Long,
+        val email: String,
+        val name: String,
+        val userType: String,
+        val point: Long,
+)
